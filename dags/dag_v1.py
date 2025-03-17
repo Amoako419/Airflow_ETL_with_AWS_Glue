@@ -9,7 +9,7 @@ import pandas as pd
 import io
 import os
 
-ADMIN_EMAIL = "admin@example.com"
+ADMIN_EMAIL = "ghheskey@gmail.com"
 
 def task_success_log(context):
     """Callback function to log task success."""
@@ -36,7 +36,7 @@ def upload_folder_to_s3(local_folder: str, s3_bucket: str, s3_prefix: str) -> No
 @task
 def validate_csv_columns(s3_bucket: str, s3_key: str, required_columns: list[str]) -> bool:
     """
-    Validate if the CSV file in the S3 bucket contains the required columns.
+    Validate if the CSV file in the S3 bucket contains the required columns for the kpi calculations.
     """
     s3 = S3Hook()
     file_obj = s3.get_key(key=s3_key, bucket_name=s3_bucket)
@@ -81,18 +81,18 @@ def load_to_dynamodb(processed_data_s3_bucket: str, processed_data_s3_key: str, 
     print("Data loaded into DynamoDB successfully.")
 
 @dag(
-    dag_id="s3_to_dynamodb_with_glue",
-    start_date=datetime(2023, 1, 1),
+    dag_id="etl_to_dynamodb_with_glue",
+    start_date=datetime(2025, 3, 17),
     schedule_interval="@hourly",
     catchup=False,
     default_args={
-        "owner": "airflow",
-        "retries": 2,
+        "owner": "ec2_user",
+        "retries": 3,
         "email": [ADMIN_EMAIL],
         "email_on_failure": True
     },
     description="DAG to upload folder data to S3, validate CSV, process with Glue, and load into DynamoDB.",
-    tags=["S3", "Glue", "DynamoDB"]
+    tags=["AWS","S3", "Glue", "DynamoDB"]
 )
 def s3_to_dynamodb_with_glue():
     # Define variables

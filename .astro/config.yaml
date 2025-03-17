@@ -1,2 +1,6 @@
+postgres:
+    port: "8091"
 project:
     name: airflow-etl-with-aws-glue
+webserver:
+    port: "8090"

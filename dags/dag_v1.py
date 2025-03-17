@@ -96,12 +96,12 @@ def load_to_dynamodb(processed_data_s3_bucket: str, processed_data_s3_key: str, 
 )
 def s3_to_dynamodb_with_glue():
     # Define variables
-    local_folder_path = "<local_folder_path>"          # Local folder containing CSV files
-    source_s3_bucket = "<source_s3_bucket>"
-    s3_upload_prefix = "<source_s3_prefix>"              # S3 prefix (folder) for uploads
-    archive_s3_bucket = "<archive_s3_bucket>"
-    processed_data_s3_bucket = "<processed_data_s3_bucket>"
-    processed_data_s3_key = "<processed_data_s3_key>"     # Processed data file key in S3
+    local_folder_path = "../data/streams/"          # Local folder containing CSV files
+    source_s3_bucket = "etl-ingestion-bucket-125"    # Source S3 bucket
+    s3_upload_prefix = "ingestion_folder/streams/"              # S3 prefix (folder) for uploads
+    archive_s3_bucket = "archival-buckets-etl-125"    # Archive S3 bucket
+    processed_data_s3_bucket = "processed-data-bucket-125"    # Processed data S3 bucket
+    processed_data_s3_key = "data-folder"     # Processed data file key in S3
     dynamodb_table_name = "<dynamodb_table_name>"
     glue_job_name = "<glue_job_name>"
     required_columns = ["user_id", "track_id", "listen_time"]

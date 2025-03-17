@@ -17,15 +17,23 @@ Technologies Used
  - Amazon DynamoDB (Processed data storage)
  - Python, Pandas, PySpark (Data processing)
 
+## KPIs Computed
+- Listen Count: Total number of streams per genre per day.
+- Unique Listeners: Count of distinct users per genre per day.
+- Total Listening Time: Aggregate listening duration per genre per day.
+- Average Listening Time per User: Mean listening time per user per day.
+- Top 3 Songs per Genre per Day: Most played tracks in each genre daily.
+- Top 5 Genres per Day: Most popular genres based on listen count.
+
 ## Architecture & Data Flow
 1. Data Source:
- - Streaming data is ingested as batch files in Amazon S3 at irregular intervals.
+    - Streaming data is ingested as batch files in Amazon S3 at irregular intervals.
 2. Processing:
- - Validation: Ensure files have the required schema before processing.
- - Transformation: Clean and normalize data using AWS Glue (PySpark & Python Shell jobs).
- - Metric Computation: Compute key KPIs for real-time insights.
+    - Validation: Ensure files have the required schema before processing.
+    - Transformation: Clean and normalize data using AWS Glue (PySpark & Python Shell jobs).
+    - Metric Computation: Compute key KPIs for real-time insights.
 3. Storage & Consumption:
- - Processed data is stored in Amazon DynamoDB for fast lookups by downstream applications.
+    - Processed data is stored in Amazon DynamoDB for fast lookups by downstream applications.
 
 Key Features
 ============

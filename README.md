@@ -3,7 +3,7 @@ Overview
 
 # Data Pipeline with Airflow & AWS GLUE
 
-This project implements a real-time ETL (Extract, Transform, Load) pipeline for a music streaming service. The pipeline processes and analyzes user streaming behavior, handling data arriving at unpredictable intervals to compute key insights.This pipeline store the results in DynamoDB for consumption by downstream applications.
+This project demonstrates how to use Apache Airflow to orchestrate an ETL pipeline that extracts data from an S3 bucket, transforms it, and loads it into a DynamoDB table. This project fetches batch data containing user and song metadata that reside in an Amazon RDS database and streaming data stored in Amazon S3 in batch files. This pipeline extracts, validates, transforms, and loads the data into Amazon DynamoDB for fast analytical processing and real-time business intelligence consumption.
 
 <p align="center">
     <img src="images/architecture_diagram.jpg" alt="The architecture diagram" width="100%" />

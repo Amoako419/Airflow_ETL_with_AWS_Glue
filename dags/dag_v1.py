@@ -102,18 +102,18 @@ def s3_to_dynamodb_with_glue():
     archive_s3_bucket = "archival-buckets-etl-125"    # Archive S3 bucket
     processed_data_s3_bucket = "processed-data-bucket-125"    # Processed data S3 bucket
     processed_data_s3_key = "data-folder"     # Processed data file key in S3
-    dynamodb_table_name = "<dynamodb_table_name>"
+    dynamodb_table_name = "kpis-table"    # DynamoDB table name
     glue_job_name = "<glue_job_name>"
     required_columns = ["user_id", "track_id", "listen_time"]
     
-    # 1. Upload all files from the local folder to S3
+    # Upload all files from the local folder to S3
     upload_files = upload_folder_to_s3(
         local_folder=local_folder_path,
         s3_bucket=source_s3_bucket,
         s3_prefix=s3_upload_prefix
     )
     
-    # 2. Validate CSV columns from a specific file (adjust the key as needed)
+    # Validate CSV columns from a specific file (adjust the key as needed)
     validation_s3_key = f"{s3_upload_prefix}/<file_for_validation>.csv"
     validation_result = validate_csv_columns(
         s3_bucket=source_s3_bucket,
@@ -121,10 +121,10 @@ def s3_to_dynamodb_with_glue():
         required_columns=required_columns
     )
     
-    # 3. Branch the DAG based on the validation result
+    # Branch the DAG based on the validation result
     branch = branch_validation(validation_result)
     
-    # 4a. If validation passes, run the Glue job to process data
+    # If validation passes, run the Glue job to process data
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
         job_name=glue_job_name,

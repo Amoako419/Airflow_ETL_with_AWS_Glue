@@ -7,18 +7,20 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 # Initialize Glue job arguments
-args = getResolvedOptions(sys.argv, ['music-etl'])
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
 sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
-job.init(args['music-etl'], args)
+job.init(args['JOB_NAME'], args)
 
 # Read streaming data from Glue Catalog
 data = glueContext.create_data_frame.from_catalog(
     database="kpi-crawler-db",
-    table_name="pre-processing-kpi"
+    table_name="processed_folder"
 )
+
+data = dynamic_frame.toDF()
 
 # Extract date from timestamp
 data = data.withColumn("created_date", F.to_date("created_at"))
@@ -67,7 +69,7 @@ final_kpis = kpi_base.join(top_songs_per_genre, ["created_date", "track_genre"],
 glueContext.write_dynamic_frame.from_options(
     frame=glueContext.create_dynamic_frame.from_dataframe(final_kpis, glueContext),
     connection_type="s3",
-    connection_options={"path": "s3://processed-data-bucket-125/processed_folder/"},
+    connection_options={"path": "s3://processed-data-bucket-125/glue_output/"},
     format="csv"
 )
 

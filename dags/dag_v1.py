@@ -171,9 +171,11 @@ def etl_with_crawler_dag():
     processed_prefix = "processed_folder/"
     archive_bucket = "archival-buckets-etl-125"
     glue_job_name = "music-etl"
+    glue_output_key = "glue_output/"
     glue_crawler_name = "kpis-crawler"
     database_name = "kpi-crawler-db"
     table_name = "processed_folder"
+    archive_prefix = "archived-folder/"
     required_columns = [
         "user_id", "track_id", "listen_time",
         "track_genre", "created_at", "duration_ms",
@@ -215,21 +217,22 @@ def etl_with_crawler_dag():
         provide_context=True,
     )
 
+
     run_glue = GlueJobOperator(
         task_id="run_glue_job",
         job_name=glue_job_name,
-        script_location=f"s3://{processed_bucket}/glue-scripts/glue_script.py",
-        iam_role_name="etl-glue-job",
-        create_job_kwargs={"GlueVersion": "2.0", "WorkerType": "Standard", "NumberOfWorkers": 2},
         on_success_callback=task_success_log,
-        region_name="eu-west-1"
+        region_name="eu-west-1",
+        wait_for_completion=True,
+        verbose=True,
+        aws_conn_id="aws_conn_id"
     )
 
     validation_failed = EmptyOperator(task_id="validation_failed")
 
     load_dynamodb = load_processed_data_to_dynamodb(
         s3_bucket=processed_bucket,
-        prefix=processed_prefix,
+        prefix=glue_output_key,
         dynamodb_table_name=dynamodb_table_name
     )
 
@@ -238,7 +241,7 @@ def etl_with_crawler_dag():
         source_bucket_name=processed_bucket,
         source_bucket_key=processed_prefix,
         dest_bucket_name=archive_bucket,
-        dest_bucket_key=processed_prefix,
+        dest_bucket_key=archive_prefix,
         on_success_callback=task_success_log
     )
 

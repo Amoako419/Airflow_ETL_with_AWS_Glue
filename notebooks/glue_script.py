@@ -7,12 +7,12 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 # Initialize Glue job arguments
-args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+args = getResolvedOptions(sys.argv, ['music-etl'])
 sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
-job.init(args['JOB_NAME'], args)
+job.init(args['music-etl'], args)
 
 # Read streaming data from Glue Catalog
 data = glueContext.create_data_frame.from_catalog(
@@ -45,7 +45,7 @@ song_rank_window = Window.partitionBy("created_date", "track_genre").orderBy(F.d
 top_songs_per_genre = song_listen_count.withColumn("rank", F.rank().over(song_rank_window)) \
                                         .filter(F.col("rank") <= 3) \
                                         .groupBy("created_date", "track_genre") \
-                                        .agg(F.concat_ws(", ", F.collect_list("track_name")).alias("top_3"))
+                                        .agg(F.concat_ws("| ", F.collect_list("track_name")).alias("top_3"))
 
 # Compute Top 5 Genres per Day
 genre_listen_count = data.groupBy("created_date", "track_genre").agg(
@@ -57,7 +57,7 @@ genre_rank_window = Window.partitionBy("created_date").orderBy(F.desc("listen_co
 top_genres_per_day = genre_listen_count.withColumn("rank", F.rank().over(genre_rank_window)) \
                                        .filter(F.col("rank") <= 5) \
                                        .groupBy("created_date") \
-                                       .agg(F.concat_ws(", ", F.collect_list("track_genre")).alias("top_5_genres"))
+                                       .agg(F.concat_ws("| ", F.collect_list("track_genre")).alias("top_5_genres"))
 
 # Join all KPIs
 final_kpis = kpi_base.join(top_songs_per_genre, ["created_date", "track_genre"], "left") \

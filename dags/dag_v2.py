@@ -213,7 +213,7 @@ def etl_with_crawler_dag():
         wait_for_completion=True,
         script_args={
             "--JOB_NAME": glue_job_name,
-            "--DYNAMODB_TABLE_NAME": "kpi-table_v2",
+            "--DYNAMODB_TABLE_NAME": "kpi_table_v2",
             "--AWS_REGION": "eu-west-1"
         },
         verbose=True,

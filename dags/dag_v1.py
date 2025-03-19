@@ -128,23 +128,7 @@ def branch_on_validation(ti):
     else:
         return "validation_failed"
 
-@task
-def load_processed_data_to_dynamodb(s3_bucket: str, prefix: str, dynamodb_table_name: str):
-    s3 = S3Hook()
-    dynamodb = DynamoDBHook()
-    table = dynamodb.get_conn().Table(dynamodb_table_name)
 
-    keys = s3.list_keys(bucket_name=s3_bucket, prefix=prefix)
-    for key in keys:
-        if key.endswith(".csv"):
-            file_obj = s3.get_key(key=key, bucket_name=s3_bucket)
-            content = file_obj.get()['Body'].read().decode('utf-8')
-            df = pd.read_csv(io.StringIO(content))
-            with table.batch_writer() as batch:
-                for _, row in df.iterrows():
-                    batch.put_item(Item=row.to_dict())
-            print(f"Loaded data from {key} into DynamoDB.")
-    print(f"Data loaded into DynamoDB table '{dynamodb_table_name}'.")
 
 @task.branch
 def decide_next_step(ti):
@@ -159,7 +143,7 @@ def decide_next_step(ti):
 @dag(
     dag_id="etl_with_glue",
     start_date=datetime(2025, 3, 17),
-    schedule_interval="@hourly",
+    schedule_interval="@daily",
     catchup=False,
     default_args={"owner": "ec2_user", "retries": 2},
     tags=["AWS", "Glue", "S3", "DynamoDB"]
@@ -182,7 +166,7 @@ def etl_with_crawler_dag():
         "track_name", "user_name", "artists",
         "popularity", "user_age", "user_country", "album_name", "explicit"
     ]
-    dynamodb_table_name = "kpis-table"
+
 
     # 1. Check if files exist
     check_files_task = check_if_files_exist(
@@ -217,24 +201,24 @@ def etl_with_crawler_dag():
         provide_context=True,
     )
 
-
     run_glue = GlueJobOperator(
         task_id="run_glue_job",
         job_name=glue_job_name,
         on_success_callback=task_success_log,
         region_name="eu-west-1",
         wait_for_completion=True,
+        scripts_args={   
+            'JOB_NAME': 'music-etl',
+            'DYNAMODB_TABLE_NAME': 'kpis-table',
+            'AWS_REGION': 'eu-west-1'
+        },
         verbose=True,
         aws_conn_id="aws_conn_id"
     )
 
+
     validation_failed = EmptyOperator(task_id="validation_failed")
 
-    load_dynamodb = load_processed_data_to_dynamodb(
-        s3_bucket=processed_bucket,
-        prefix=glue_output_key,
-        dynamodb_table_name=dynamodb_table_name
-    )
 
     archive_processed = S3CopyObjectOperator(
         task_id="archive_processed_data",
@@ -248,7 +232,7 @@ def etl_with_crawler_dag():
     delete_processed = S3DeleteObjectsOperator(
         task_id="delete_processed_data",
         bucket=processed_bucket,
-        keys=processed_prefix,
+        prefix = processed_prefix,
         on_success_callback=task_success_log
     )
 
@@ -258,7 +242,7 @@ def etl_with_crawler_dag():
     branch_decision >> end_dag
 
     process_task >> start_crawler >> catalog_validation >> branch_task
-    branch_task >> run_glue >> load_dynamodb >> archive_processed >> delete_processed
+    branch_task >> run_glue >> archive_processed >> delete_processed 
     branch_task >> validation_failed
 
 etl_with_crawler_dag()

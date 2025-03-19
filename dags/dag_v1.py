@@ -138,6 +138,20 @@ def decide_next_step(ti):
     else:
         return "end_dag"
 
+@task
+def archive_processed_files(source_bucket, source_prefix, dest_bucket, dest_prefix):
+    s3 = S3Hook(aws_conn_id="aws_conn_id")
+    keys = s3.list_keys(bucket_name=source_bucket, prefix=source_prefix)
+    for key in keys:
+        dest_key = key.replace(source_prefix, dest_prefix, 1)
+        s3.copy_object(
+            source_bucket_key=key,
+            source_bucket_name=source_bucket,
+            dest_bucket_name=dest_bucket,
+            dest_bucket_key=dest_key
+        )
+        print(f"Archived {key} to {dest_bucket}/{dest_key}")
+
 
 
 @dag(
@@ -168,17 +182,17 @@ def etl_with_crawler_dag():
     ]
 
 
-    # 1. Check if files exist
+    # Check if files exist
     check_files_task = check_if_files_exist(
         bucket_name=ingestion_bucket,
         prefix=ingestion_prefix,
         aws_conn_id="aws_conn_id"
     )
 
-    # 2. Branch decision (if files found or not)
+    # Branch decision (if files found or not)
     branch_decision = decide_next_step()
 
-    # 3. If files found, process them
+    # If files found, process them
     process_task = process_ingested_data(
         ingestion_bucket=ingestion_bucket,
         ingestion_prefix=ingestion_prefix,
@@ -186,7 +200,7 @@ def etl_with_crawler_dag():
         processed_prefix=processed_prefix
     )
 
-    # 4. If no files, end the DAG
+    # If no files, end the DAG
     end_dag = EmptyOperator(task_id="end_dag")
 
     start_crawler = start_glue_crawler(crawler_name=glue_crawler_name)
@@ -205,12 +219,11 @@ def etl_with_crawler_dag():
         task_id="run_glue_job",
         job_name=glue_job_name,
         on_success_callback=task_success_log,
-        region_name="eu-west-1",
         wait_for_completion=True,
-        scripts_args={   
-            'JOB_NAME': 'music-etl',
-            'DYNAMODB_TABLE_NAME': 'kpis-table',
-            'AWS_REGION': 'eu-west-1'
+        script_args = {
+            "--JOB_NAME": "music-etl",
+            "--DYNAMODB_TABLE_NAME": "kpis-table",
+            "--AWS_REGION": "eu-west-1"
         },
         verbose=True,
         aws_conn_id="aws_conn_id"
@@ -219,24 +232,18 @@ def etl_with_crawler_dag():
 
     validation_failed = EmptyOperator(task_id="validation_failed")
 
-
-    archive_processed = S3CopyObjectOperator(
-        task_id="archive_processed_data",
-        source_bucket_name=processed_bucket,
-        source_bucket_key=processed_prefix,
-        dest_bucket_name=archive_bucket,
-        dest_bucket_key=archive_prefix,
-        on_success_callback=task_success_log
-    )
+    archive_processed = archive_processed_files(processed_bucket, processed_prefix, archive_bucket, archive_prefix)
 
     delete_processed = S3DeleteObjectsOperator(
         task_id="delete_processed_data",
-        bucket=processed_bucket,
-        prefix = processed_prefix,
+        bucket="processed-data-bucket-125",
+        prefix="processed_folder/processed_data_",
+        aws_conn_id="aws_conn_id",
         on_success_callback=task_success_log
     )
 
-    # 5. Set task dependencies
+
+    # Set task dependencies
     check_files_task >> branch_decision
     branch_decision >> process_task
     branch_decision >> end_dag

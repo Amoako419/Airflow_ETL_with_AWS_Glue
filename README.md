@@ -3,9 +3,12 @@ Overview
 
 # Data Pipeline with Airflow & AWS GLUE
 
-This project is a real-time ETL pipeline built to process streaming music listening data, compute daily key performance indicators (KPIs) at the genre level, and store the results in Amazon DynamoDB for fast lookups and reporting.
-It ingests streaming activity data, song metadata, and user data, computes daily metrics including top songs and top genres, and archives processed data for traceability. This pipeline extracts, validates, transforms, and loads the data into Amazon DynamoDB for fast analytical processing and real-time business intelligence consumption.
+This project is a **real-time ETL pipeline** built to process streaming music listening data, compute daily key performance indicators (KPIs) at the genre level, and store the results in **Amazon DynamoDB** for fast lookups and reporting.  
+It ingests streaming activity data, song metadata, and user data, computes daily metrics including top songs and top genres, and archives processed data for traceability. 
+The goal of this project is to build a scalable, cloud-native, and automated ETL pipeline capable of processing streaming music listening data in near real-time. The pipeline computes daily key performance indicators (KPIs) at the genre level and stores the results in Amazon DynamoDB for fast lookups and reporting. This enables real-time business intelligence and analytics for music streaming platforms.
 
+### Purpose
+This project was designed to address the challenges of processing large volumes of streaming data efficiently and reliably. By leveraging cloud-native tools, the pipeline ensures scalability, fault tolerance, and automation. It provides actionable insights such as top genres, top songs, and user engagement metrics, which are critical for decision-making in the music streaming industry.
 
 Architecture Diagram
 ======
@@ -47,7 +50,7 @@ How the Pipeline Works
 2. **Crawler Execution:**  
    - Glue Crawler scans the S3 processed folder to update the Glue Catalog with fresh schema.  
 3. **Airflow DAG Trigger:**  
-   - Airflow schedules the job every hour.  
+   - Airflow schedules the job every day.  
    - If validation succeeds, it runs the Glue job.  
 4. **Glue ETL Job:**  
    - Reads processed data from the Glue Catalog  
@@ -65,7 +68,7 @@ Key Features
  3. Automated Workflow: Orchestrated with Apache Airflow, ensuring smooth execution and monitoring.
  4. Failure Handling: Sends email alerts if the pipeline fails.
 
- 
+
 DynamoDB Table Schema  
 =============
 
